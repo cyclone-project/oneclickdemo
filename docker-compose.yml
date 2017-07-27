@@ -1,0 +1,251 @@
+version: '3.2'
+
+secrets:
+  cert:
+    file: ./server.crt
+  key:
+    file: ./server.pem
+  kcexport:
+    file: ./kcexport.json
+  logstashconf:
+    file: ./logstash.conf
+  wpurl:
+    file: ./url.txt
+  openIdConf:
+    file: ./openIdConf.json
+
+services:
+
+  proxy:
+    image: traefik
+    command: --web --docker --docker.swarmmode --docker.exposedByDefault=false --loglevel=debug
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /dev/null:/traefik.toml
+    ports:
+      - "80:80"
+      - "8080:8080"
+
+  keycloak:
+    image: cycloneproject/keycloak-postgres-ha-demo
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: "tcp://${FP_HOST}:20514"
+        syslog-format: "rfc3164"
+    environment:
+      - KC_IMPORT=true
+      - KEYCLOAK_REALM=master
+      - KEYCLOAK_USER=admin
+      - KEYCLOAK_PASSWORD=admin
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_PORT_5432_TCP_ADDR=postgres
+      - POSTGRES_PORT_5432_TCP_PORT=5432
+    deploy:
+      replicas: 2
+      labels:
+        - "traefik.port=8080"
+        - "traefik.enable=true"
+        - "traefik.backend=keycloak"
+        - "traefik.backend.loadbalancer.sticky=true"
+        - "traefik.frontend.rule=PathPrefix:/,/auth"
+    secrets:
+      - source: kcexport
+        target: kcexport.json
+        mode: 0444
+    depends_on:
+      - postgres
+    expose:
+      - "8080"
+
+  postgres:
+    image: postgres:alpine
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: "tcp://${FP_HOST}:20514"
+        syslog-format: "rfc3164"
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=keycloak
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    deploy:
+      replicas: 1
+    expose:
+      - "5432"
+
+  samlbridge:
+    image: cycloneproject/samlbridge-postgres-ha-demo
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: "tcp://${FP_HOST}:20514"
+        syslog-format: "rfc3164"
+    restart: unless-stopped
+    environment:
+      - FP_BASEURL=${FP_BASEURL}
+      - SAMLBRIDGE_CRON=changeMe
+      - SAMLBRIDGE_PASSWORD=admin
+      - SAMLBRIDGE_SALT=defaultsalt
+      - POSTGRES_DB=keycloak
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_PORT_5432_TCP_ADDR=postgres
+      - POSTGRES_PORT_5432_TCP_PORT=5432
+    deploy:
+      replicas: 2
+      labels:
+        - "traefik.port=80"
+        - "traefik.enable=true"
+        - "traefik.backend=samlbridge"
+        - "traefik.frontend.rule=PathPrefix:/samlbridge"
+        - "traefik.backend.loadbalancer.sticky=true"
+    secrets:
+      - source: cert
+        target: server.crt
+        mode: 0444
+      - source: key
+        target: server.pem
+        mode: 0444
+    expose:
+      - "80"
+
+  samlidp:
+    image: cycloneproject/samlidp-demo
+    restart: unless-stopped
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: "tcp://${FP_HOST}:20514"
+        syslog-format: "rfc3164"
+    environment:
+      - FP_BASEURL=${FP_BASEURL}
+      - SAMLIDP_PASSWORD=admin
+      - SAMLIDP_SALT=defaultsalt
+      - SAMLIDP_CONTACTNAME
+      - SAMLIDP_CONTACTEMAIL
+    deploy:
+      replicas: 1
+      labels:
+        - "traefik.port=80"
+        - "traefik.enable=true"
+        - "traefik.backend=samlidp"
+        - "traefik.frontend.rule=PathPrefix:/samlidp"
+        #- "traefik.backend.loadbalancer.sticky=true"
+    secrets:
+      - source: cert
+        target: server.crt
+        mode: 0444
+      - source: key
+        target: server.pem
+        mode: 0444
+    expose:
+      - "80"
+
+  elasticsearch:
+    image: cycloneproject/logging-elasticsearch17
+    deploy:
+      replicas: 1
+    expose:
+      - "9200"
+      - "9300"
+
+  logstash:
+    image: logstash:1.5
+    command: logstash -f /run/secrets/logstash.conf --debug
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          # have to publish ports directly so constrain to manager node
+          # otherwise, if started on different machine, IPs won't match
+          - node.role == manager
+    secrets:
+      - source: logstashconf
+        target: logstash.conf
+        mode: 0444
+    expose:
+      - "20400"
+      - "20500"
+      - "20514"
+      - "20600"
+      - "20700"
+    ports:
+      - "20400:20400"
+      - "20500:20500"
+      - "20514:20514"
+      - "20600:20600"
+      - "20700:20700"
+
+  filter:
+    image: cycloneproject/logging-filter-proxy
+    deploy:
+      replicas: 1
+      labels:
+        - "traefik.port=8080"
+        - "traefik.enable=true"
+        - "traefik.backend=filter"
+        - "traefik.frontend.rule=PathPrefix:/kibana, /elasticsearch"
+    environment:
+      - FPROXY_ESURL=/elasticsearch
+      - FPROXY_ESFRONT=http://"+window.location.hostname+"/elasticsearch
+      - FPROXY_KCURL=${FP_BASEURL}/auth
+      - FPROXY_SSLREQ=external
+    depends_on:
+      - elasticsearch
+      - logstash
+    expose:
+      - "8080"
+
+  wordpressdb:
+    image: mysql:5.7
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: "tcp://${FP_HOST}:20514"
+        syslog-format: "rfc3164"
+    environment:
+      - MYSQL_ROOT_PASSWORD=tastamam
+      - MYSQL_DATABASE=wordpress
+    deploy:
+      replicas: 1
+    expose:
+      - "3306"
+
+  wordpress:
+    image: cycloneproject/demo-wp
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: "tcp://${FP_HOST}:20514"
+        syslog-format: "rfc3164"
+    deploy:
+      replicas: 1
+      labels:
+        - "traefik.port=80"
+        - "traefik.enable=true"
+        - "traefik.backend=wordpress"
+        - "traefik.frontend.rule=PathPrefix:/"
+    environment:
+      - WORDPRESS_DB_PASSWORD=tastamam
+      - WORDPRESS_DB_HOST=wordpressdb
+      - OPENIDCONF_PATH=/run/secrets/openIdConf.json
+      - WPURLFILE_PATH=/run/secrets/url.txt
+    secrets:
+      - source: openIdConf
+        target: openIdConf.json
+        mode: 0444
+      - source: wpurl
+        target: url.txt
+        mode: 0444
+    depends_on:
+      - wordpressdb
+    expose:
+      - "80"
+
