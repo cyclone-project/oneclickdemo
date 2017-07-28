@@ -1,5 +1,14 @@
 #!/bin/bash -xe
 
+not404() {
+    httpcode=$(curl --output /dev/null --silent -w "%{http_code}" "$@")
+    if [ "$httpcode" == "404" ]; then
+        return 1
+    else
+        return 0
+    fi
+}
+
 # retrieve my url
 hostname=`ss-get hostname`
 link=http://${hostname}
@@ -41,7 +50,8 @@ done
 
 ss-set statecustom 'deploy..'
 sudo docker stack deploy -c docker-compose.yml cyclonedemo
-until $(curl --output /dev/null --silent --head --fail $link/auth/); do
+until $(curl --output /dev/null --silent --head --fail $link/auth/ \
+             && not404 "$link/auth/"); do
     printf '.'
     sleep 5
 done
