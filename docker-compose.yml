@@ -35,7 +35,7 @@ services:
     logging:
       driver: "syslog"
       options:
-        syslog-address: "tcp://${FP_HOST}:20514"
+        syslog-address: "udp://${FP_HOST}:20514"
         syslog-format: "rfc3164"
     environment:
       - KC_IMPORT=true
@@ -68,7 +68,7 @@ services:
     logging:
       driver: "syslog"
       options:
-        syslog-address: "tcp://${FP_HOST}:20514"
+        syslog-address: "udp://${FP_HOST}:20514"
         syslog-format: "rfc3164"
     restart: unless-stopped
     environment:
@@ -85,7 +85,7 @@ services:
     logging:
       driver: "syslog"
       options:
-        syslog-address: "tcp://${FP_HOST}:20514"
+        syslog-address: "udp://${FP_HOST}:20514"
         syslog-format: "rfc3164"
     restart: unless-stopped
     environment:
@@ -122,7 +122,7 @@ services:
     logging:
       driver: "syslog"
       options:
-        syslog-address: "tcp://${FP_HOST}:20514"
+        syslog-address: "udp://${FP_HOST}:20514"
         syslog-format: "rfc3164"
     environment:
       - FP_BASEURL=${FP_BASEURL}
@@ -182,6 +182,11 @@ services:
       - "20514:20514"
       - "20600:20600"
       - "20700:20700"
+      - "20400:20400/udp"
+      - "20500:20500/udp"
+      - "20514:20514/udp"
+      - "20600:20600/udp"
+      - "20700:20700/udp"
 
   filter:
     image: cycloneproject/logging-filter-proxy
@@ -197,6 +202,7 @@ services:
       - FPROXY_ESFRONT=http://"+window.location.hostname+"/elasticsearch
       - FPROXY_KCURL=${FP_BASEURL}/auth
       - FPROXY_SSLREQ=external
+      - FPROXY_LSPORT=20600
     depends_on:
       - elasticsearch
       - logstash
@@ -208,7 +214,7 @@ services:
     logging:
       driver: "syslog"
       options:
-        syslog-address: "tcp://${FP_HOST}:20514"
+        syslog-address: "udp://${FP_HOST}:20514"
         syslog-format: "rfc3164"
     environment:
       - MYSQL_ROOT_PASSWORD=tastamam
@@ -223,7 +229,7 @@ services:
     logging:
       driver: "syslog"
       options:
-        syslog-address: "tcp://${FP_HOST}:20514"
+        syslog-address: "udp://${FP_HOST}:20514"
         syslog-format: "rfc3164"
     deploy:
       replicas: 1
