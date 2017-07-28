@@ -53,7 +53,7 @@ services:
         - "traefik.enable=true"
         - "traefik.backend=keycloak"
         - "traefik.backend.loadbalancer.sticky=true"
-        - "traefik.frontend.rule=PathPrefix:/,/auth"
+        - "traefik.frontend.rule=PathPrefix:/auth"
     secrets:
       - source: kcexport
         target: kcexport.json
