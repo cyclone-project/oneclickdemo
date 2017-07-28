@@ -1,3 +1,41 @@
-# oneclickdemo
+Cyclone Oneclickdemo
+====================
 
-Work In Progress
+The Cyclone Oneclickdemo is a preconfigured, easy-to-deploy and scalable demo deployment with the [cyclone-federation-provider](https://github.com/cyclone-project/cyclone-federation-provider), [cyclone-logging](https://github.com/cyclone-project/cyclone-logging), and [cyclone-demo-wp-docker](https://github.com/cyclone-project/cyclone-demo-wp-docker) plus a Demo Identity Provider, all configured to interact.
+
+This repository contains scripts and configuration for the cyclone oneclickdemo deployment.
+
+## How to use
+
+Deploy using docker swarm using the provided scripts.
+
+```shell
+# if you deploy locally
+./localdeploy.sh
+
+# if you deploy on nuvla
+./nuvladeploy.sh
+```
+
+Visit the Hostname/IP given to the script in your browser. The endpoints are:
+
+| Component  | Endpoint    |
+|------------|-------------|
+| Wordpress  | /           |
+| Keycloak   | /auth       |
+| Samlbridge | /samlbridge |
+| SamlIDP    | /samlidp    |
+| Kibana     | /kibana     |
+
+To change Keycloak configuration log in with username `admin` and password `admin`. Same username and password applies to the Samlbridge and SamlIDP. To view all logs in Kibana, log in as `admin` on Keycloak or `user` on the SamlIDP. The SamlIDP provides the following users:
+
+| | | | | |
+|----------|------|-------|-------|-------|
+| Username | user | user2 | user3 | user4 |
+| Password | user | user  | user  | user  |
+| displayName | user | user2 | user3 | user4 |
+| eduPersonAffiliation | member,student | member,student | member,student | member,student |
+| mail | user1@samlidp.com | user2@samlidp.com | user3@samlidp.com | user4@samlidp.com |
+| schacHomeOrganization | admin | demo | demo | demo |
+| eduPersonTargetedID | ✔ | ✔ | ✔ | ✘ |
+
