@@ -7,15 +7,6 @@ command_exists() {
     command -v "$@" > /dev/null 2>&1;
 }
 
-not404() {
-    httpcode=$(curl --output /dev/null --silent -w "%{http_code}" "$@")
-    if [ "$httpcode" == "404" ]; then
-        return 1
-    else
-        return 0
-    fi
-}
-
 user="$(id -un 2>/dev/null || true)"
 sh_c='sh -c'
 if [ "$user" != "root" ]; then
@@ -76,17 +67,19 @@ if [ "$dockermode" -eq "2" ]; then
     $sh_c docker stack deploy -c docker-compose.yml cyclonedemo
 fi
 
-echo "Waiting for Keycloak."
-until $(curl --output /dev/null --silent --head --fail $FP_BASEURL/auth/ \
-             && not404 "$FP_BASEURL/auth/"); do
-    printf '.'
+# retrieve container id for keycloak
+imgId=$($sh_c docker images cycloneproject/keycloak-postgres-ha-demo --format "{{.ID}}")
+kccontainer=$($sh_c docker ps -f "ancestor=$imgId" -l --format "{{.ID}}")
+
+echo "Waiting for Keycloak"
+until $($sh_c docker exec -i $kccontainer keycloak/bin/kcadm.sh config credentials --server http://localhost:8080/auth --realm master --user admin --password admin); do
+    echo "Will try again in 5 seconds"
     sleep 5
 done
-echo ""
+echo "Success!"
 
 echo "Registering test client"
-kccontainer=$($sh_c docker ps -f "ancestor=cycloneproject/keycloak-postgres-ha-demo" -l --format "{{.ID}}")
-$sh_c docker exec -i $kccontainer keycloak/bin/kcadm.sh create clients --server http://localhost:8080/auth --realm master --user admin --password admin --client admin-cli -f - << EOF
+$sh_c docker exec -i $kccontainer keycloak/bin/kcadm.sh create clients --server http://localhost:8080/auth --realm master --user admin --password admin -r master -f - << EOF
 {
   "clientId": "test",
   "clientTemplate": "Cyclone Template",
@@ -96,9 +89,6 @@ $sh_c docker exec -i $kccontainer keycloak/bin/kcadm.sh create clients --server 
 EOF
 
 echo "Deployment complete"
-echo "You can stop the components using docker stack rm cyclonedemo"
+echo "You can stop and remove the containers using docker stack rm cyclonedemo"
 echo "Thank you for trying out Cyclone!"
-#echo "You can stop the components using either"
-#echo "(1) docker-compose down or"
-#echo "(2) docker stack rm cyclonedemo"
 exit 0

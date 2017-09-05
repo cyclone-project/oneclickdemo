@@ -1,14 +1,5 @@
 #!/bin/bash -xe
 
-not404() {
-    httpcode=$(curl --output /dev/null --silent -w "%{http_code}" "$@")
-    if [ "$httpcode" == "404" ]; then
-        return 1
-    else
-        return 0
-    fi
-}
-
 # retrieve my url
 hostname=`ss-get hostname`
 link=http://${hostname}
@@ -50,15 +41,19 @@ done
 
 ss-set statecustom 'deploy..'
 sudo docker stack deploy -c docker-compose.yml cyclonedemo
-until $(curl --output /dev/null --silent --head --fail $link/auth/ \
-             && not404 "$link/auth/"); do
-    printf '.'
+
+# retrieve container id for keycloak
+imgId=$(docker images cycloneproject/keycloak-postgres-ha-demo --format "{{.ID}}")
+kccontainer=$(docker ps -f "ancestor=$imgId" -l --format "{{.ID}}")
+
+ss-set statecustom 'waiting for keycloak'
+until $($sh_c docker exec -i $kccontainer keycloak/bin/kcadm.sh config credentials --server http://localhost:8080/auth --realm master --user admin --password admin); do
+    echo "Will try again in 5 seconds"
     sleep 5
 done
 
 ss-set statecustom 'register test client'
-kccontainer=$(docker ps -f "ancestor=cycloneproject/keycloak-postgres-ha-demo" -l --format "{{.ID}}")
-docker exec -i $kccontainer keycloak/bin/kcadm.sh create clients --server http://localhost:8080/auth --realm master --user admin --password admin --client admin-cli -r master -f - << EOF
+docker exec -i $kccontainer keycloak/bin/kcadm.sh create clients --server http://localhost:8080/auth --realm master --user admin --password admin -r master -f - << EOF
 {
   "clientId": "test",
   "clientTemplate": "Cyclone Template",
