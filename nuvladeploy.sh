@@ -39,8 +39,13 @@ until [ $swarmworkers -eq $joinSwmWk ]; do
     joinSwmWk=$(docker node ls -f "role=worker" -q | wc -l)
 done
 
+# pull docker images for reference later
+# otherwise we cannot retrieve the imgId
+ss-set statecustom 'pull docker images..'
+docker-compose -f docker-compose.yml pull
+
 ss-set statecustom 'deploy..'
-sudo docker stack deploy -c docker-compose.yml cyclonedemo
+docker stack deploy -c docker-compose.yml cyclonedemo
 
 # retrieve container id for keycloak
 imgId=$(docker images cycloneproject/keycloak-postgres-ha-demo --format "{{.ID}}")

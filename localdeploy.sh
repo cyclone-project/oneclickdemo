@@ -49,6 +49,11 @@ cat > openIdConf.json << EOF
 }
 EOF
 
+# pull docker images for reference later
+# otherwise we cannot retrieve the imgId
+echo "Pulling docker images"
+$sh_c docker-compose -f docker-compose.yml pull
+
 # deploy with docker-compose
 if [ "$dockermode" -eq "1" ]; then
     echo "Deploying with docker-compose"
