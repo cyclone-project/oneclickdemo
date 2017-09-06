@@ -73,6 +73,10 @@ $sh_c docker stack deploy -c $DIR/docker-compose.yml cyclonedemo
 
 # retrieve container id for keycloak
 imgId=$($sh_c docker images cycloneproject/keycloak-postgres-ha-demo --format "{{.ID}}")
+until [ -n $($sh_c docker ps -f "ancestor=$imgId" -l --format "{{.ID}}") ]; do
+    # container has not started yet so wait a little
+    sleep 3
+done
 kccontainer=$($sh_c docker ps -f "ancestor=$imgId" -l --format "{{.ID}}")
 kcadmin="$sh_c docker exec -i $kccontainer keycloak/bin/kcadm.sh"
 
