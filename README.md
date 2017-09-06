@@ -7,7 +7,7 @@ This repository contains scripts and configuration for the cyclone oneclickdemo 
 
 ## How to use
 
-__Dependencies:__ Docker, root and/or sudo/su, and jq.
+__Dependencies:__ docker v17.04+, docker-compose v1.12+, root and/or sudo/su, and jq.
 
 Deploy with docker swarm using `deploy.sh`, e.g.
 
