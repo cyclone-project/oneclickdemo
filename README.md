@@ -7,13 +7,15 @@ This repository contains scripts and configuration for the cyclone oneclickdemo 
 
 ## How to use
 
-Deploy using docker swarm using the provided scripts.
+__Dependencies:__ Docker, root and/or sudo/su, and jq.
+
+Deploy with docker swarm using `deploy.sh`, e.g.
 
 ```shell
-# if you deploy locally
-./localdeploy.sh
+# provide hostname or ip where it will be reachable
+./deploy.sh 10.0.2.15
 
-# if you deploy on nuvla
+# or if you are deploying on nuvla
 ./nuvladeploy.sh
 ```
 
@@ -27,7 +29,7 @@ Visit the Hostname/IP given to the script in your browser. The endpoints are:
 | SamlIDP    | /samlidp    |
 | Kibana     | /kibana     |
 
-To change Keycloak configuration log in with username `admin` and password `admin`. Same username and password applies to the Samlbridge and SamlIDP. To view all logs in Kibana, log in as `admin` on Keycloak or `user` on the SamlIDP. The SamlIDP provides the following users:
+ The SamlIDP provides the following users:  
 
 | | | | | |
 |----------|------|-------|-------|-------|
@@ -39,3 +41,4 @@ To change Keycloak configuration log in with username `admin` and password `admi
 | schacHomeOrganization | admin | demo | demo | demo |
 | eduPersonTargetedID | ✔ | ✔ | ✔ | ✘ |
 
+To change Keycloak configuration log in with username `admin` and password `admin`. Same username and password applies to the Samlbridge and SamlIDP. You can log in to Wordpress and Kibana using any of the configured users. To view all logs in Kibana, log in as `admin` on Keycloak or `user` on the SamlIDP.
