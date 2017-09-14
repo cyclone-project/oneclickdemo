@@ -56,11 +56,6 @@ cat > $DIR/openIdConf.json << EOF
 }
 EOF
 
-# pull docker images for reference later
-# otherwise we may not be able to retrieve the imgId
-echo "Pulling docker images"
-$sh_c docker-compose -f $DIR/docker-compose.yml pull
-
 # deploy with docker swarm
 if $sh_c docker node ls > /dev/null 2>&1; then
     echo "Docker is already in swarm mode"
@@ -72,12 +67,11 @@ echo "Deploying with docker swarm and stack name cyclonedemo"
 $sh_c docker stack deploy -c $DIR/docker-compose.yml cyclonedemo
 
 # retrieve container id for keycloak
-imgId=$($sh_c docker images cycloneproject/keycloak-postgres-ha-demo --format "{{.ID}}")
-until [ -n $($sh_c docker ps -f "ancestor=$imgId" -l --format "{{.ID}}") ]; do
+until [ -n "$($sh_c docker ps -f "name=keycloakImport" -l --format "{{.ID}}")" ]; do
     # container has not started yet so wait a little
     sleep 3
 done
-kccontainer=$($sh_c docker ps -f "ancestor=$imgId" -l --format "{{.ID}}")
+kccontainer=$($sh_c docker ps -f "name=keycloakImport" -l --format "{{.ID}}")
 kcadmin="$sh_c docker exec -i $kccontainer keycloak/bin/kcadm.sh"
 
 # log in with kcadm.sh, success means that keycloak is now reachable
