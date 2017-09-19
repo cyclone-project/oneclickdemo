@@ -1,5 +1,11 @@
 version: '3.2'
 
+# Compose File for the cyclone oneclickdemo
+# This file combines components from the
+# cyclone-federation-provider (https://github.com/cyclone-project/cyclone-federation-provider)
+# cyclone-demo-wp-docker (https://github.com/cyclone-project/cyclone-demo-wp-docker)
+# cyclone-logging (https://github.com/cyclone-project/cyclone-logging)
+
 secrets:
   cert:
     file: ./server.crt

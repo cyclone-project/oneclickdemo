@@ -95,7 +95,15 @@ $kcadmin create clients \
          -s publicClient=true \
          -s redirectUris="[\"$FP_BASEURL/*\"]"
 
+echo ""
 echo "Deployment complete"
-echo "You can stop and remove the containers using docker stack rm cyclonedemo"
+echo "You can access the components at "
+echo "Traefik: $FP_BASEURL:8080"
+echo "Wordpress: $FP_BASEURL"
+echo "Keycloak: $FP_BASEURL/auth"
+echo "Kibana: $FP_BASEURL/kibana"
+echo "Samlbridge: $FP_BASEURL/samlbridge"
+echo "DemoIDP: $FP_BASEURL/samlidp"
+echo "To stop and remove the containers run docker stack rm cyclonedemo"
 echo "Thank you for trying out Cyclone!"
 exit 0

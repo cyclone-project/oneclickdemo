@@ -42,3 +42,19 @@ Visit the Hostname/IP given to the script in your browser. The endpoints are:
 | eduPersonTargetedID | ✔ | ✔ | ✔ | ✘ |
 
 To change Keycloak configuration log in with username `admin` and password `admin`. Same username and password applies to the Samlbridge and SamlIDP. You can log in to Wordpress and Kibana using any of the configured users. To view all logs in Kibana, log in as `admin` on Keycloak or `user` on the SamlIDP.
+
+Components can be scaled using docker swarm, e.g.
+```shell
+# for Keycloak scale the keycloak service
+# do NOT scale the keycloakImport service
+docker service scale cyclonedemo_keycloak=x
+
+# for the Samlbridge
+docker service scale cyclonedemo_samlbridge=x
+
+# for the DemoIDP
+docker service scale cyclonedemo_samlidp=x
+
+...
+```
+
