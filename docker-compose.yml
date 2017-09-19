@@ -193,14 +193,9 @@ services:
 
   logstash:
     image: logstash:1.5
-    command: logstash -f /run/secrets/logstash.conf
+    command: logstash --debug -f /run/secrets/logstash.conf
     deploy:
       replicas: 1
-      placement:
-        constraints:
-          # we are publishing ports directly so make sure it is deployed on manager
-          # otherwise, if started on different machine, IPs won't match
-          - node.role == manager
     secrets:
       - source: logstashconf
         target: logstash.conf
