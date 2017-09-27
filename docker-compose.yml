@@ -198,14 +198,17 @@ services:
       - "9300"
 
   logstash:
-    image: logstash:1.5
-    command: logstash --debug -f /run/secrets/logstash.conf
+    image: cycloneproject/logging-logstash
+    #command: logstash --debug -f /run/secrets/logstash.conf
+    command: logstash -f /run/secrets/logstash.conf
     deploy:
       replicas: 1
     secrets:
       - source: logstashconf
         target: logstash.conf
         mode: 0444
+    environment:
+      - ES_HOST=elasticsearch
     expose:
       - "20400"
       - "20500"
