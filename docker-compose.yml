@@ -105,7 +105,7 @@ services:
       - "8080"
 
   postgres:
-    image: postgres:alpine
+    image: postgres:9-alpine
     logging:
       driver: "syslog"
       options:
