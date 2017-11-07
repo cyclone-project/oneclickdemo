@@ -3,7 +3,12 @@ set -xe
 
 DIR=$(dirname "$(readlink -f "$0")")
 
-export FP_HOST=`ss-get hostname`
+FP_HOST=`ss-get FP_HOST`
+if [ -z "$FP_HOST" ]; then
+	FP_HOST=`ss-get hostname`
+fi
+
+export FP_HOST=$FP_HOST
 export FP_BASEURL=http://$FP_HOST
 ss-set ss:url.service ${FP_BASEURL}
 
