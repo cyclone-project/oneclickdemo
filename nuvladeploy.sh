@@ -3,7 +3,7 @@ set -xe
 
 DIR=$(dirname "$(readlink -f "$0")")
 
-FP_HOST=`ss-get FP_HOST`
+FP_HOST=`ss-get --timeout=10 FP_HOST` || true
 if [ -z "$FP_HOST" ]; then
 	FP_HOST=`ss-get hostname`
 fi
